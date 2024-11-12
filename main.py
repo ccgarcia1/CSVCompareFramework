@@ -1,26 +1,35 @@
 import csv
 
-file1_path = 'C:\\compare\\fdl_corp_sub_region_CSV_after.csv'  # OLD PROD
-file2_path = 'C:\\compare\\fdl_corp_sub_region_CSV_before.csv'  # PROD
+
+file1_path = 'C:\\compare\\fdl_corp_CURRENCY_EXCHANGE_old_EFDRP.csv'
+file2_path = 'C:\\compare\\fdl_corp_CURRENCY_EXCHANGE_new_FDRP.csv'
+
 
 def compare_csv_ignore_columns(file1, file2, columns_to_ignore):
     records_dict1 = {}
     records_dict2 = {}
+    has_messagef1 = False
+    has_messagef2 = False
+
 
     with open(file1, 'r') as f1, open(file2, 'r') as f2:
         reader1 = csv.DictReader(f1)
         reader2 = csv.DictReader(f2)
 
+
         for row1 in reader1:
-            key = (row1['SUB_REGION_CODE'])
+            key = (row1['BEGIN_DATE'],row1['BUSINESS_UNIT_ID'],row1['BUSINESS_UNIT_CURRENCY_CODE'],row1['CURRENCY_EXCHANGE_RATE_TYPE'],row1['SOURCE_CURRENCY_CODE'],row1['TARGET_CURRENCY_CODE'])
             records_dict1[key] = {col: row1[col].strip() for col in row1 if col not in columns_to_ignore}
 
+
         for row2 in reader2:
-            key = (row2['SUB_REGION_CODE'])
-            records_dict2[key] = {col: row2[col].strip() for col in row2 if col not in columns_to_ignore}
+             key = (row2['BEGIN_DATE'],row2['BUSINESS_UNIT_ID'],row2['BUSINESS_UNIT_CURRENCY_CODE'],row2['CURRENCY_EXCHANGE_RATE_TYPE'],row2['SOURCE_CURRENCY_CODE'],row2['TARGET_CURRENCY_CODE'])
+             records_dict2[key] = {col: row2[col].strip() for col in row2 if col not in columns_to_ignore}
+
 
         # Find differences between the dictionaries
         differing_records = {}
+
 
         for key in records_dict1:
             if key in records_dict2:
@@ -37,17 +46,26 @@ def compare_csv_ignore_columns(file1, file2, columns_to_ignore):
                                 'file2_value': records_dict2[key].get(col)
                             }
             else:
-                print('Records present in PROD but not present in OLD PROD')
+                if not has_messagef1:
+                    print('Records present in file 1 but not present in file 2')
+                has_messagef1 = True
+               
                 print(key)
+
 
         for key in records_dict2:
             if key not in records_dict1:
-                print('Records present in OLD PROD but not present in PROD')
+                if not has_messagef2:
+                    print('Records present in file 2 but not present in file 1')
+                has_messagef2 = True
                 print(key)
+
 
         return differing_records
 
-columns_to_ignore = ['UPDATE_DATE', 'MODIFY_DATE']  # Replace with column names you want to ignore
+
+columns_to_ignore = ['UPDATE_UID', 'UPDATE_DATE']  # Replace with column names you want to ignore
+
 
 differences = compare_csv_ignore_columns(file1_path, file2_path, columns_to_ignore)
 if differences:
